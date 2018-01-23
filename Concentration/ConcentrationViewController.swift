@@ -41,12 +41,27 @@ final class ConcentrationViewController: UIViewController {
     
     @IBOutlet private var cardButtons: [UIButton]!
     
+    private var lastCardButtonTouched: UIButton?
+    
     @IBAction private func touchCard(_ sender: UIButton) {
         if let cardNumber = cardButtons.index(of: sender){
+            lastCardButtonTouched = sender
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
             updateScoreLabel()
         }
+    }
+    
+    @objc func flipCardAnimation(_ button: UIButton, emojiForCard: String){
+        UIView.transition(
+            with: button,
+            duration: 0.6,
+            options: [.transitionFlipFromLeft],
+            animations: {
+                button.setTitle(emojiForCard, for: UIControlState.normal)
+                button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+            }
+        )
     }
     
     private func updateViewFromModel(){
@@ -55,8 +70,12 @@ final class ConcentrationViewController: UIViewController {
                 let button = cardButtons[index]
                 let card = game.cards[index]
                 if card.isFaceUp {
-                    button.setTitle(emoji(for: card), for: UIControlState.normal)
-                    button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+                    if button == lastCardButtonTouched {
+                        flipCardAnimation(button, emojiForCard: emoji(for: card))
+                    } else {
+                        button.setTitle(emoji(for: card), for: UIControlState.normal)
+                        button.backgroundColor = #colorLiteral(red: 0.8039215803, green: 0.8039215803, blue: 0.8039215803, alpha: 1)
+                    }
                 } else {
                     button.setTitle("", for: UIControlState.normal)
                     button.backgroundColor = card.isMatched ? #colorLiteral(red: 1, green: 1, blue: 1, alpha: 1) : #colorLiteral(red: 0, green: 0.3285208941, blue: 0.5748849511, alpha: 1)
