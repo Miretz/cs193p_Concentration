@@ -13,7 +13,7 @@ final class ConcentrationViewController: UIViewController {
     private lazy var game = Concentration(numberOfPairsOfCards: numberOfPairsOfCards)
     
     var numberOfPairsOfCards: Int {
-        return (cardButtons.count + 1)/2
+        return (visibleCardButtons.count + 1)/2
     }
     
     @IBAction func startNewGame(_ sender: UIButton) {
@@ -29,7 +29,9 @@ final class ConcentrationViewController: UIViewController {
             .strokeWidth: 5.0,
             .strokeColor: #colorLiteral(red: 0.370555222, green: 0.3705646992, blue: 0.3705595732, alpha: 1)
         ]
-        let text = (game.isGameOver) ? "Well done! Score: \(game.score)" : "Score: \(game.score)"
+        let separator = traitCollection.verticalSizeClass == .compact ? "\n" : ":"
+        let gameOverText = game.isGameOver ? "Well done!" : ""
+        let text = "\(gameOverText) Score\(separator) \(game.score)"
         flipCountLabel.attributedText = NSAttributedString(string: text, attributes: attributes)
     }
     
@@ -41,10 +43,19 @@ final class ConcentrationViewController: UIViewController {
     
     @IBOutlet private var cardButtons: [UIButton]!
     
+    private var visibleCardButtons: [UIButton]! {
+        return cardButtons?.filter { !$0.superview!.isHidden }
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        updateViewFromModel()
+    }
+    
     private var lastCardButtonTouched: UIButton?
     
     @IBAction private func touchCard(_ sender: UIButton) {
-        if let cardNumber = cardButtons.index(of: sender){
+        if let cardNumber = visibleCardButtons.index(of: sender){
             lastCardButtonTouched = sender
             game.chooseCard(at: cardNumber)
             updateViewFromModel()
@@ -55,7 +66,7 @@ final class ConcentrationViewController: UIViewController {
     @objc func flipCardAnimation(_ button: UIButton, emojiForCard: String){
         UIView.transition(
             with: button,
-            duration: 0.6,
+            duration: 0.3,
             options: [.transitionFlipFromLeft],
             animations: {
                 button.setTitle(emojiForCard, for: UIControlState.normal)
@@ -64,10 +75,15 @@ final class ConcentrationViewController: UIViewController {
         )
     }
     
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateScoreLabel()
+    }
+    
     private func updateViewFromModel(){
-        if cardButtons != nil {
-            for index in cardButtons.indices {
-                let button = cardButtons[index]
+        if visibleCardButtons != nil {
+            for index in visibleCardButtons.indices {
+                let button = visibleCardButtons[index]
                 let card = game.cards[index]
                 if card.isFaceUp {
                     if button == lastCardButtonTouched {
