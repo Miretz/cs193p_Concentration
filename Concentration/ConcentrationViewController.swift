@@ -21,7 +21,20 @@ final class ConcentrationViewController: UIViewController {
         emojiChoices = Theme.randomTheme().rawValue
         emoji.removeAll()
         updateViewFromModel()
-        updateScoreLabel()
+        score = 0
+        isGameOver = false
+    }
+    
+    private(set) var score = 0 {
+        didSet {
+            updateScoreLabel()
+        }
+    }
+    
+    private(set) var isGameOver = false {
+        didSet {
+            updateScoreLabel()
+        }
     }
     
     private func updateScoreLabel(){
@@ -30,16 +43,17 @@ final class ConcentrationViewController: UIViewController {
             .strokeColor: #colorLiteral(red: 0.370555222, green: 0.3705646992, blue: 0.3705595732, alpha: 1)
         ]
         let separator = traitCollection.verticalSizeClass == .compact ? "\n" : ":"
-        let gameOverText = game.isGameOver ? "Well done!" : ""
-        let text = "\(gameOverText) Score\(separator) \(game.score)"
+        let winNotification = isGameOver ? "Well done!" : ""
+        let text = "\(winNotification) Score\(separator) \(score)"
         flipCountLabel.attributedText = NSAttributedString(string: text, attributes: attributes)
     }
     
-    @IBOutlet private weak var flipCountLabel: UILabel! {
-        didSet {
-            updateScoreLabel()
-        }
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        updateScoreLabel()
     }
+    
+    @IBOutlet private weak var flipCountLabel: UILabel!
     
     @IBOutlet private var cardButtons: [UIButton]!
     
@@ -58,6 +72,8 @@ final class ConcentrationViewController: UIViewController {
         if let cardNumber = visibleCardButtons.index(of: sender){
             lastCardButtonTouched = sender
             game.chooseCard(at: cardNumber)
+            score = game.score
+            isGameOver = game.isGameOver
             updateViewFromModel()
             updateScoreLabel()
         }
@@ -75,15 +91,10 @@ final class ConcentrationViewController: UIViewController {
         )
     }
     
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-        updateScoreLabel()
-    }
-    
     private func updateViewFromModel(){
-        if visibleCardButtons != nil {
-            for index in visibleCardButtons.indices {
-                let button = visibleCardButtons[index]
+        if let cb = visibleCardButtons {
+            for index in cb.indices {
+                let button = cb[index]
                 let card = game.cards[index]
                 if card.isFaceUp {
                     if button == lastCardButtonTouched {
